@@ -1,0 +1,17 @@
+# Copie para config.local.toml (não versionado) e ajuste. Credenciais do banco e a chave dos lotes NÃO ficam aqui:
+# vêm do cofre acs-toolbox (POSTGRES_* / SYNC_BD_CHAVE) ou de variáveis de ambiente de mesmo nome.
+
+no = "casa"                      # "casa" ou "cnpq" (cada PC define o seu)
+
+# pasta_drive = 'G:\Meu Drive\SincronizacaoBD'   # padrão; se mudar a letra, o marcador é procurado nas outras unidades
+# db_host = "localhost"
+# db_port = 5432
+# db_nome = "cnpq"
+# db_usuario = "postgres"
+
+# tam_max_lote = 67108864        # bytes por arquivo de lote (rotação em fronteira de transação)
+# retencao_dias = 7              # lotes já confirmados pelo par são apagados depois disto
+# espera_lote_faltando_h = 6     # avisa se um lote não chega ao Drive por mais tempo que isto
+
+# Tabelas só de inserção (logs/custos): id repetido com conteúdo diferente vira linha nova, nada se sobrescreve
+# somente_insercao = ["llm_registros_custos", "rag_auditoria_acesso", "log_importacoes_diarias", "pre_selecao_auditoria"]
