@@ -64,3 +64,11 @@ INSERT ≈ 15–24 mil linhas/s; UPDATE ≈ 600–900 linhas/s (linha a linha). 
 - `reparar-tabela` e `pausar-tabela` (conserto de uma tabela sem reclonar o banco).
 - Aplicação em lote de UPDATE/DELETE (otimização).
 - `windows-toasts` é opcional (`uv sync --extra avisos`); sem ele os avisos vão só para o log.
+
+## Documentação
+- `documentacao/PLANO_SINCRONIZACAO_BIDIRECIONAL.md`: arquitetura, regras de conflito, riscos e decisões.
+- `documentacao/IMPLANTACAO_PC_CNPQ.md`: roteiro passo a passo da implantação (casa e CNPq) e checklist.
+- `documentacao/legado/`: documentos do pipeline antigo (OneDrive), só como histórico.
+
+A cópia editada dos documentos é a deste repositório; a pasta `Integração BD Local  & Remoto\documentacao` (fora do git) guarda
+a versão anterior.
