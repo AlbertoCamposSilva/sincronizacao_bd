@@ -63,8 +63,30 @@ def cmd_status(a):
                   "wal_retido_bytes", "conflitos_total", "ultima_comparacao"):
             if e.get(k) not in (None, False):
                 print(f"   {k}: {e.get(k)}")
+        if e.get("nuvem"):
+            print(f"   nuvem: {e['nuvem']}")
         if e.get("mensagem_parado"):
             print(f"   >>> PARADO: {e['mensagem_parado']}")
+
+
+def cmd_puxar_nuvem(a):
+    """Uma puxada da nuvem agora (ignora o intervalo). Só funciona se puxar_nuvem = true neste PC."""
+    from . import ciclo, nuvem
+    cfg = _cfg()
+    ciclo.configurar_log(cfg)
+    if not cfg.puxar_nuvem:
+        sys.exit("puxar_nuvem está desligado neste PC (config.local.toml: puxar_nuvem = true).")
+    r = nuvem.puxar(cfg, forcar=True)
+    print(json.dumps(r, ensure_ascii=False, indent=1, default=str))
+    if r and r.get("erro"):
+        sys.exit(2)
+
+
+def cmd_nuvem_marca(a):
+    """Define até que id da nuvem uma tabela só de inserção já foi importada (use o maior id da nuvem que já existe aqui)."""
+    from . import nuvem
+    nuvem.definir_marca(_cfg(), a.tabela, a.marca)
+    print(f"Marca de {a.tabela} = {a.marca}.")
 
 
 def cmd_comparar(a):
@@ -137,6 +159,7 @@ def main(argv=None):
                             ("inicializar", cmd_inicializar, "cria a pasta do Drive e instala a sincronização no banco"),
                             ("preflight", cmd_preflight, "verifica o banco (somente leitura) antes de instalar"),
                             ("ciclo", cmd_ciclo, "um ciclo (publica + aplica); é o que a tarefa agendada roda"),
+                            ("puxar-nuvem", cmd_puxar_nuvem, "puxa a nuvem agora (só no PC puxador)"),
                             ("status", cmd_status, "estado dos dois nós"),
                             ("comparar", cmd_comparar, "impressão digital dos bancos e conferência com o par"),
                             ("pausar", cmd_pausar, "pausa a sincronização nos dois PCs"),
@@ -149,6 +172,10 @@ def main(argv=None):
     r = sp.add_parser("ddl-resolvido", help="marca um DDL como já aplicado manualmente neste banco (retoma o fluxo)")
     r.add_argument("id")
     r.set_defaults(fn=cmd_ddl_resolvido)
+    m = sp.add_parser("nuvem-marca", help="define a marca de uma tabela só de inserção da nuvem")
+    m.add_argument("tabela")
+    m.add_argument("marca", type=int)
+    m.set_defaults(fn=cmd_nuvem_marca)
     t = sp.add_parser("instalar-tarefas", help="instala as tarefas no Agendador (sem janela, sem administrador)")
     t.add_argument("--minutos", type=int, default=10)
     t.add_argument("--dry-run", action="store_true", help="só mostra o script PowerShell")

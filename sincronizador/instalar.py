@@ -51,8 +51,14 @@ def instalar(cfg) -> dict:
             cur.execute(SQL.read_text(encoding="utf-8"))
             cur.execute("select 1 from pg_publication where pubname = %s", (cfg.publicacao,))
             if not cur.fetchone():
-                cur.execute(f"CREATE PUBLICATION {cfg.publicacao} FOR TABLES IN SCHEMA public, TABLE sincronizacao.ddl_log")
+                cur.execute(f"CREATE PUBLICATION {cfg.publicacao} FOR TABLES IN SCHEMA public, TABLE sincronizacao.ddl_log, "
+                            "sincronizacao.nuvem_ids, sincronizacao.nuvem_marcas")
                 resumo["publicacao_criada"] = True
+            for t in ("nuvem_ids", "nuvem_marcas"):        # publicações criadas antes da recepção da nuvem não as têm
+                cur.execute("select 1 from pg_publication_tables where pubname = %s and schemaname = 'sincronizacao' and tablename = %s",
+                            (cfg.publicacao, t))
+                if not cur.fetchone():
+                    cur.execute(f"ALTER PUBLICATION {cfg.publicacao} ADD TABLE sincronizacao.{t}")
             for o in cfg.origens:
                 cur.execute("select 1 from pg_replication_origin where roname = %s", (o,))
                 if not cur.fetchone():

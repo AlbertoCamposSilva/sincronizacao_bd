@@ -55,6 +55,21 @@ CREATE TABLE IF NOT EXISTS sincronizacao.conflitos (
     dados_locais          jsonb
 );
 
+-- Recepcao da nuvem (replicadas: o estado vai junto se o papel de "puxador" mudar de PC)
+-- nuvem_ids: o que veio da nuvem (so isso pode ser apagado quando some de la). id_local difere de id_nuvem so nas tabelas so de insercao.
+CREATE TABLE IF NOT EXISTS sincronizacao.nuvem_ids (
+    tabela   text NOT NULL,
+    id_nuvem text NOT NULL,
+    id_local text NOT NULL,
+    PRIMARY KEY (tabela, id_nuvem)
+);
+-- nuvem_marcas: ate qual id da nuvem ja foi importado (tabelas so de insercao)
+CREATE TABLE IF NOT EXISTS sincronizacao.nuvem_marcas (
+    tabela        text PRIMARY KEY,
+    marca         bigint NOT NULL DEFAULT 0,
+    atualizado_em timestamptz NOT NULL DEFAULT now()
+);
+
 -- Mais de um comando no mesmo envio? Ignora ';' dentro de corpos $$...$$ e de literais 'texto'.
 CREATE OR REPLACE FUNCTION sincronizacao.eh_multi(q text) RETURNS boolean LANGUAGE plpgsql IMMUTABLE AS $f$
 DECLARE s text := q;

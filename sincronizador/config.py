@@ -29,6 +29,16 @@ class Config:
     ocioso_s: float = 3.0               # sem mensagens por tanto tempo = acabou o que havia no slot
     retencao_dias: int = 7
     espera_lote_faltando_h: float = 6.0
+    # recepção da nuvem (Cloud SQL -> local): só o PC "puxador" liga puxar_nuvem
+    puxar_nuvem: bool = False
+    nuvem_intervalo_min: float = 30.0
+    nuvem_falha_alerta_h: float = 6.0
+    nuvem_espera_max_s: float = 1200.0
+    gcp_projeto: str = "var-cnpq-2026"
+    gcp_regiao: str = "southamerica-east1"
+    nuvem_job: str = "var-sync-exportar"
+    nuvem_bucket: str = "var-cnpq-2026-db-sync"
+    nuvem_prefixo: str = "nuvem_para_local"
     # tabelas só de inserção (logs/custos): id repetido com conteúdo diferente vira linha nova, não sobrescreve
     somente_insercao: tuple = ("llm_registros_custos", "rag_auditoria_acesso", "log_importacoes_diarias", "pre_selecao_auditoria")
     pasta_logs: pathlib.Path = dataclasses.field(
@@ -113,7 +123,9 @@ def carregar(caminho: str | None = None, exigir_chave: bool = True) -> Config:
         raise RuntimeError("Falta o segredo SYNC_BD_CHAVE (gere com: python -m sincronizador gerar-chave).")
     cfg = Config(no=no, dsn=dsn, pasta=localizar_pasta(dados.get("pasta_drive")),
                  chave=chave_de_texto(chave_txt) if chave_txt else b"\x00" * 32)
-    for campo in ("slot", "publicacao", "prefixo_origem", "tam_max_lote", "ocioso_s", "retencao_dias", "espera_lote_faltando_h"):
+    for campo in ("slot", "publicacao", "prefixo_origem", "tam_max_lote", "ocioso_s", "retencao_dias", "espera_lote_faltando_h",
+                  "puxar_nuvem", "nuvem_intervalo_min", "nuvem_falha_alerta_h", "nuvem_espera_max_s", "gcp_projeto",
+                  "gcp_regiao", "nuvem_job", "nuvem_bucket", "nuvem_prefixo"):
         if campo in dados:
             setattr(cfg, campo, dados[campo])
     if "somente_insercao" in dados:

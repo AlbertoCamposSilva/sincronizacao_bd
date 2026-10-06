@@ -14,7 +14,7 @@ import time
 
 import psycopg2
 
-from . import aplicador, avisos, estado, lote, publicador
+from . import aplicador, avisos, estado, lote, nuvem, publicador
 from .config import MARCADOR
 
 log = logging.getLogger("sincronizador")
@@ -153,6 +153,13 @@ def executar_ciclo(cfg) -> dict:
             log.exception("falha ao aplicar")
         saida["erro"], saida["parado"] = erro, parado
 
+        # --- nuvem -> local (só no puxador; com o fluxo PC<->PC parado não importa nada novo)
+        if not parado:
+            try:
+                saida["nuvem"] = nuvem.puxar(cfg)
+            except Exception:
+                log.exception("falha inesperada na puxada da nuvem")
+
         # --- estado e poda
         try:
             pub, apl = _ultimos_seq(cfg)
@@ -172,6 +179,9 @@ def executar_ciclo(cfg) -> dict:
             "wal_retido_bytes": wal, "conflitos_total": confl,
             "conflitos_avisados": anterior.get("conflitos_avisados", 0),
         }
+        if cfg.puxar_nuvem:
+            ne = nuvem.ler_estado(cfg)
+            novo["nuvem"] = {k: ne.get(k) for k in ("ultima_ok", "falhando_desde", "ultimo_erro", "marcas_pendentes")}
         try:
             estado.podar_saida(cfg, int(do_par.get("aplicou_do_par", 0)))
         except Exception:

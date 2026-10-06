@@ -29,6 +29,8 @@ Plano, decisões e roteiro de implantação: `C:\Projetos\CNPq\importantes\Integ
 | `status` | estado dos dois nós |
 | `comparar` | impressão digital das tabelas e conferência com o par |
 | `pausar` / `retomar` | pausa/retoma nos dois PCs (arquivo `PAUSAR` no Drive) |
+| `puxar-nuvem` | puxa a nuvem agora (só no PC puxador, `puxar_nuvem = true`) |
+| `nuvem-marca <tabela> <N>` | define a marca de uma tabela só de inserção da nuvem |
 | `ddl "<comando>"` | executa um DDL aqui e o enfileira para o par |
 | `ddl-resolvido <id>` | marca um DDL "manual" como já aplicado à mão neste banco (retoma o fluxo) |
 | `instalar-tarefas [--dry-run]` | cria as tarefas `SincBD_Ciclo` (10 min + logon) e `SincBD_Comparar` (semanal) |
@@ -60,7 +62,7 @@ e as tarefas agendadas (invisíveis).
 INSERT ≈ 15–24 mil linhas/s; UPDATE ≈ 600–900 linhas/s (linha a linha). Cargas típicas levam segundos.
 
 ## Ainda não implementado (ver o plano)
-- Recepção da nuvem (Fase 4): Job de exportação + puxada + mescla (decisão D2 em aberto, projeto Importações Diárias).
+- Recepção da nuvem: o lado local está pronto (`nuvem.py`, `documentacao/NUVEM_CONTRATO.md`; puxador = CNPq). Falta o Job `var-sync-exportar`, o papel `var_sync_leitura` e o bucket, no repositório do VAR.
 - `reparar-tabela` e `pausar-tabela` (conserto de uma tabela sem reclonar o banco).
 - Aplicação em lote de UPDATE/DELETE (otimização).
 - `windows-toasts` é opcional (`uv sync --extra avisos`); sem ele os avisos vão só para o log.
