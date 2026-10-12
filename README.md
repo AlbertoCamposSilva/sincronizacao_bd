@@ -52,6 +52,7 @@ sobre tabelas novas: se não tiverem chave primária, recebem `REPLICA IDENTITY 
 ```
 uv sync
 uv run pytest                      # sobe 2 PostgreSQL temporários (portas 55432/55433); nunca toca no banco real
+                                   # se o Windows reservar essas portas (erro "Permission denied"): SINC_PORTA_TESTE=57432
 SINC_BENCH_N=50000 uv run pytest test/test_desempenho.py -s     # medição de desempenho
 ```
 Os testes cobrem: formato do lote, ida e volta, sem eco, reaplicação, DDL, conflito, renumeração, lacuna, lote corrompido,
@@ -74,6 +75,13 @@ INSERT ≈ 15–24 mil linhas/s; UPDATE ≈ 600–900 linhas/s (linha a linha). 
 
 A cópia editada dos documentos é a deste repositório; a pasta `Integração BD Local  & Remoto\documentacao` (fora do git) guarda
 a versão anterior.
+
+## Invisibilidade (nenhuma janela)
+As tarefas rodam com `pythonw.exe`, ocultas. Qualquer subprocesso precisa de `CREATE_NO_WINDOW` e nunca de `shell=True`.
+Caso conhecido (corrigido em 12/10/2026): sem `GOOGLE_CLOUD_PROJECT`, o `google.auth` chamava `gcloud.cmd config get project`
+a cada leitura do cofre e piscava um CMD; `config._segredo` agora define essa variável a partir de `ACS_TOOLBOX_GCP_PROJECT`.
+Para conferir: iniciar `SincBD_Ciclo` e verificar que o `pythonw` não gera processos filhos (ver `IMPLANTACAO_PC_CNPQ.md`, Etapa 6).
+Para atualizar o CNPq depois: `git pull` + `uv sync` em `C:\Projetos\CNPq\importantes\sincronizacao_bd`; o próximo ciclo já usa o código novo.
 
 ## Donos das rotinas (decisão D7, 12/10/2026)
 Cada rotina automática tem um único PC dono: **pesadas na casa, leves no CNPq; Lattes só no CNPq** (só lá vem a versão restrita). Tabela de donos e efeitos

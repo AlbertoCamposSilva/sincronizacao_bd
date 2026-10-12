@@ -72,6 +72,13 @@ nesse caso, ou se recopia, ou se reaplica à mão no CNPq o que mudou.
    Exemplo: `C:\Projetos\CNPq\importantes\sincronizacao_bd` (decisão D8).
 2. `uv sync`.
 3. Conferir o cofre `acs-toolbox-secrets`: credenciais do banco e chave dos lotes (`SYNC_BD_CHAVE`).
+   A variável de usuário `ACS_TOOLBOX_GCP_PROJECT` precisa estar definida no CNPq (é ela que o sincronizador usa para
+   definir `GOOGLE_CLOUD_PROJECT`). **Sem ela, e sem a correção abaixo, cada ciclo pisca uma janela do CMD**: o `google.auth`
+   roda `cmd /c gcloud.cmd config get project` e, sob `pythonw`, o Windows abre um console.
+   - Correção em `sincronizador/config.py` (`_segredo`), commit de 12/10/2026. O CNPq deve **sempre** ter o código atualizado
+     (`git pull` em `C:\Projetos\CNPq\importantes\sincronizacao_bd`, depois `uv sync`) **antes** de rodar `instalar-tarefas`.
+   - Para atualizar o código depois de instaladas as tarefas, não é preciso reinstalá-las: a próxima execução do ciclo já usa
+     o código novo. Só reinstale (`instalar-tarefas`) se mudar `tarefas.py`.
 4. Marcar a pasta `Meu Drive\SincronizacaoBD` como **"Disponível off-line"**, quando a casa criá-la (Etapa 4).
 
 ---
@@ -147,6 +154,10 @@ deve imprimir `False False False`.
 1. `python -m sincronizador instalar-tarefas` (com `no = "cnpq"` no `config.local.toml` do CNPq). Cria `SincBD_Ciclo` (a cada 10 min e no logon) e `SincBD_Comparar`
    (semanal), com `pythonw.exe` (sem janela), sem administrador. A sessão do Windows precisa ficar **logada** (pode estar
    bloqueada).
+   **Teste de invisibilidade (obrigatório):** `Start-ScheduledTask SincBD_Ciclo` e, durante ~20 s, listar os processos filhos do
+   `pythonw.exe -m sincronizador ciclo` (`Get-CimInstance Win32_Process`, filtrando por `ParentProcessId`). Não pode nascer
+   nenhum `cmd.exe`, `conhost.exe`, `gcloud` ou `powershell.exe`. Se nascer, é uma janela piscando: corrigir antes de seguir.
+   A cada novo código que chame programa externo, usar `creationflags=CREATE_NO_WINDOW` (0x08000000) e nunca `shell=True`.
 2. Esperar o CNPq aplicar os lotes acumulados da casa. `sincronizador status` nos dois deve mostrar atraso zero.
 3. `python -m sincronizador comparar` nos dois PCs. Deve dar tudo igual.
 4. Teste de aceite com a tabela `_sinc_teste`:

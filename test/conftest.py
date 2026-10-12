@@ -13,6 +13,8 @@ from sincronizador.config import Config  # noqa: E402
 from sincronizador import lote, instalar  # noqa: E402
 
 CONTADOR = itertools.count(1)
+# O Windows reserva faixas de portas (netsh interface ipv4 show excludedportrange); se 55432 cair numa, use SINC_PORTA_TESTE.
+PORTA_BASE = int(os.environ.get("SINC_PORTA_TESTE", "55432"))
 
 ESQUEMA = """
 CREATE TABLE public.pessoa (
@@ -31,7 +33,7 @@ CREATE TABLE public.log_custos (id bigserial PRIMARY KEY, valor numeric, quem te
 @pytest.fixture(scope="session")
 def clusters():
     base = pathlib.Path(tempfile.mkdtemp(prefix="sinc_test_"))
-    a, b = ClusterTemp(base, "casa", 55432), ClusterTemp(base, "cnpq", 55433)
+    a, b = ClusterTemp(base, "casa", PORTA_BASE), ClusterTemp(base, "cnpq", PORTA_BASE + 1)
     try:
         a.criar()
         b.criar()

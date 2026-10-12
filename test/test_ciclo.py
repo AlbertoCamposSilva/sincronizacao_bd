@@ -112,3 +112,17 @@ def test_script_das_tarefas_e_invisivel():
     s = tarefas.script_powershell(10)
     assert "-Hidden" in s and "pythonw" in s.lower() and "-RunLevel Limited" in s and "IgnoreNew" in s
     assert "-m sincronizador ciclo" in s and "RepetitionInterval (New-TimeSpan -Minutes 10)" in s
+
+
+def test_segredo_define_projeto_google_para_nao_chamar_gcloud(monkeypatch):
+    """Sem GOOGLE_CLOUD_PROJECT o google.auth roda 'gcloud.cmd config get project' e pisca uma janela do CMD sob pythonw."""
+    import sys
+    import types
+    from sincronizador import config
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.delenv("X_SEGREDO_TESTE", raising=False)
+    monkeypatch.setenv("ACS_TOOLBOX_GCP_PROJECT", "projeto-teste")
+    falso = types.ModuleType("acs_toolbox.segredos")
+    falso.get_secret = lambda nome, default=None: os.environ.get("GOOGLE_CLOUD_PROJECT")
+    monkeypatch.setitem(sys.modules, "acs_toolbox.segredos", falso)
+    assert config._segredo("X_SEGREDO_TESTE") == "projeto-teste"
