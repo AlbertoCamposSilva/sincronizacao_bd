@@ -64,7 +64,7 @@ compactados. É volume tranquilo para o Google Drive.
             Cloud Run Job "var-sync-exportar" (papel SÓ-SELECT nas 11 tabelas de usuários)
                                    │  CSV.gz + manifesto
                                    ▼
-                gs://var-cnpq-2026-db-sync/nuvem_para_local/   (Brasil, expira em 3 dias)
+                gs://var-cnpq-2026-db-sync/nuvem_para_local/   (Brasil, sem expiração: só o puxador apaga, depois de importar e conferir)
                                    │  baixado SOMENTE pelo "puxador" (1 PC)
                                    ▼
 ┌──────────────────────── CNPq (24/7) ─────────────────────────┐      ┌────────────────────────── CASA ──────────────────────────┐
@@ -207,8 +207,9 @@ da nuvem são ignoradas e registradas uma vez no log.
      como argumento do PC);
   4. grava `manifesto.json` **por último** (colunas, contagens, sha256 de cada arquivo, órfãos). Sem manifesto, o lote não
      está pronto.
-- **Bucket** `var-cnpq-2026-db-sync` (São Paulo, já previsto no plano 2.0.0), prefixo `nuvem_para_local/`, com regra de
-  ciclo de vida de **3 dias**. O PC também apaga cada pasta depois de importar.
+- **Bucket** `var-cnpq-2026-db-sync` (São Paulo, já previsto no plano 2.0.0), prefixo `nuvem_para_local/`. **Sem regra de ciclo de vida:**
+  nada é apagado automaticamente (decisão do gestor, 12/10/2026: uma falha pode impedir a sincronização por dias). O PC só apaga
+  cada pasta **depois de importar e conferir** o lote.
 - **Disparo:** o próprio PC puxador dispara o Job pela API do Cloud Run (`google-cloud-run`, credenciais ADC do usuário,
   as mesmas do `acs-toolbox`), espera terminar e baixa. Não é preciso ativar o Cloud Scheduler, e o Job só roda quando o
   puxador está ligado. Custo estimado: centavos por mês.
@@ -281,6 +282,26 @@ Se a rotina diária, a mensal ou o `extratorlattes` rodarem **nos dois PCs**, ca
 o fluxo traz as duas versões, gerando conflitos em massa e duplicidade em tabelas sem PK. **Regra:** cada rotina
 automática tem **um único PC dono** (decisão D7). O sincronizador avisa se detectar a mesma carga mensal vinda dos dois
 lados.
+
+### 6.4-A Donos das rotinas (decisão D7, 12/10/2026)
+Definida no projeto Importações Diárias (`docs/DIVISAO_DE_ROTINAS_CASA_CNPQ.md`; implementada em `config.py`, `DONO_DA_ETAPA_PADRAO`).
+Regra do gestor: **pesadas na casa, leves no CNPq** (o banco do CNPq está num pen-drive frágil); **Lattes só no CNPq**, porque só lá vem a versão restrita
+(sexo, CPF, raça/cor). Cada PC se identifica por `SINC_NO` ou por `no = "..."` neste projeto (`config.local.toml`).
+
+| Dono | Rotinas |
+|---|---|
+| **CNPq** | Planilhas Finais (deliberação final), Painel de Bolsas Vigentes, Demandas Brutas, **Currículos Lattes (`lattesweb`)**, Normas, Chamadas Públicas, Backup DCTI |
+| **casa** | VPN, **SEI**, Fila de Apresentações, Planilhas Auxílio Julgamento, estudos, mudanças de estrutura (DDL) |
+
+Efeitos para o sincronizador (a cargo do gestor, depois):
+- Sentido **CNPq → casa** passa a carregar as tabelas `lattes_*` (`lattes_dados_gerais`, `lattes_json`, `lattes_all`), `painel_vigentes`,
+  `relatorios_demanda_bruta`, `fomento_*`, `chamadas_*` e o RAG de normas e chamadas. Volume diário pequeno; a reimportação de Lattes já existente continua
+  fora de escopo.
+- Sentido **casa → CNPq** carrega o RAG do SEI e os logs; o CNPq não escreve o SEI.
+- As planilhas da casa **não baixam Lattes**: usam o que chegou pela sincronização.
+- O PC do CNPq alcança a nuvem pela API (`gcloud`), então a regra "nada vai à nuvem a partir do sincronizador" (§1) não muda; o envio do RAG à nuvem
+  é feito pelas próprias rotinas (Normas e Chamadas, no CNPq), com o rito da Diretriz 10 do VAR.
+- **D2** (quem puxa as tabelas de usuários da nuvem) continua em aberto.
 
 ### 6.5 Slot acumulando WAL
 O slot só retém WAL se o publicador parar, porque ele consome o slot a cada ciclo, com ou sem o par ligado.
@@ -451,7 +472,7 @@ O CNPq ainda não recebeu o banco atual da casa. Por isso, a sincronização é 
 
 ### Fase 4: Recepção da nuvem
 1. VAR: módulo `exportar_usuarios.py` + Job `var-sync-exportar`, pelo procedimento de versionamento (§7 do AGENTS.md).
-2. Rito da Diretriz 10: papel `var_sync_leitura` só-SELECT nas 11 tabelas e regra de ciclo de vida do bucket.
+2. Rito da Diretriz 10: papel `var_sync_leitura` só-SELECT nas 11 tabelas (**feito em 12/10/2026**, VAR 2.1.1; sem regra de ciclo de vida no bucket).
 3. Ligar a puxada no puxador. Primeira importação com o relatório de linhas só-locais (§5.3, item 5).
 4. Aceite: dar um like, criar uma conversa e editar um cadastro **na nuvem**, e ver chegar aos dois PCs.
 
@@ -471,7 +492,7 @@ AGENTS.md do VAR (D5) e tratar as partes do clone no Drive (D6).
 | D4 | Excluir `senha_temporaria`/`expiracao_senha` da cópia da nuvem | **Sim, excluir.** |
 | D5 | Registrar a exceção no AGENTS.md do VAR | **Feito:** §9-A de `VAR CNPq - RAG/AGENTS.md`. |
 | D6 | Apagar as 122 partes do clone antigo em `G:\Meu Drive\PostgreSQL` | **Feito em 06/10/2026** (foram para a lixeira do Google Drive). A cópia nova será gerada criptografada. |
-| D7 | PC dono de cada rotina automática | **Em aberto, fora deste projeto** (Importações Diárias). |
+| D7 | PC dono de cada rotina automática | **Respondida em 12/10/2026** (projeto Importações Diárias): pesadas na casa, leves no CNPq; **Lattes só no CNPq**. Tabela de donos em §6.4-A e em `Importações DiáriasdocsDIVISAO_DE_ROTINAS_CASA_CNPQ.md`. |
 | D8 | Projeto em `C:\Projetos\CNPq\importantes\sincronizacao_bd`, em git privado | **Sim.** |
 
 ---

@@ -74,3 +74,8 @@ INSERT ≈ 15–24 mil linhas/s; UPDATE ≈ 600–900 linhas/s (linha a linha). 
 
 A cópia editada dos documentos é a deste repositório; a pasta `Integração BD Local  & Remoto\documentacao` (fora do git) guarda
 a versão anterior.
+
+## Donos das rotinas (decisão D7, 12/10/2026)
+Cada rotina automática tem um único PC dono: **pesadas na casa, leves no CNPq; Lattes só no CNPq** (só lá vem a versão restrita). Tabela de donos e efeitos
+para o sincronizador em `documentacao/PLANO_SINCRONIZACAO_BIDIRECIONAL.md` §6.4-A; a divisão é implementada no projeto Importações Diárias
+(`docs/DIVISAO_DE_ROTINAS_CASA_CNPQ.md`), que lê o nó deste projeto (`no = "casa"|"cnpq"` em `config.local.toml`).
