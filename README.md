@@ -71,6 +71,7 @@ INSERT ≈ 15–24 mil linhas/s; UPDATE ≈ 600–900 linhas/s (linha a linha). 
 ## Documentação
 - `documentacao/PLANO_SINCRONIZACAO_BIDIRECIONAL.md`: arquitetura, regras de conflito, riscos e decisões.
 - `documentacao/IMPLANTACAO_PC_CNPQ.md`: roteiro passo a passo da implantação (casa e CNPq) e checklist.
+- `documentacao/CORRECAO_JANELAS_CMD_PC_CNPQ.md`: como aplicar no CNPq a correção das janelas de CMD piscando (13/10/2026).
 - `documentacao/legado/`: documentos do pipeline antigo (OneDrive), só como histórico.
 
 A cópia editada dos documentos é a deste repositório; a pasta `Integração BD Local  & Remoto\documentacao` (fora do git) guarda
