@@ -72,13 +72,12 @@ nesse caso, ou se recopia, ou se reaplica à mão no CNPq o que mudou.
    Exemplo: `C:\Projetos\CNPq\importantes\sincronizacao_bd` (decisão D8).
 2. `uv sync`.
 3. Conferir o cofre `acs-toolbox-secrets`: credenciais do banco e chave dos lotes (`SYNC_BD_CHAVE`).
-   A variável de usuário `ACS_TOOLBOX_GCP_PROJECT` precisa estar definida no CNPq (é ela que o sincronizador usa para
-   definir `GOOGLE_CLOUD_PROJECT`). **Sem ela, e sem a correção abaixo, cada ciclo pisca uma janela do CMD**: o `google.auth`
-   roda `cmd /c gcloud.cmd config get project` e, sob `pythonw`, o Windows abre um console.
-   - Correção em `sincronizador/config.py` (`_segredo`), commit de 12/10/2026. O CNPq deve **sempre** ter o código atualizado
-     (`git pull` em `C:\Projetos\CNPq\importantes\sincronizacao_bd`, depois `uv sync`) **antes** de rodar `instalar-tarefas`.
-   - Para atualizar o código depois de instaladas as tarefas, não é preciso reinstalá-las: a próxima execução do ciclo já usa
-     o código novo. Só reinstale (`instalar-tarefas`) se mudar `tarefas.py`.
+   O sincronizador define sozinho `GOOGLE_CLOUD_PROJECT` (usa `ACS_TOOLBOX_GCP_PROJECT` se existir) e **neutraliza as chamadas ao `gcloud`** feitas pelo
+   `google.auth` (`sincronizador/invisivel.py`). Sem isso, cada ciclo piscaria uma janela do CMD (`cmd /c gcloud.cmd config get project`).
+   - O CNPq deve **sempre** ter o código atualizado (`git pull` em `C:\Projetos\CNPq\importantes\sincronizacao_bd`, depois `uv sync`)
+     **antes** de rodar `instalar-tarefas`.
+   - Atualizar o código depois de instaladas as tarefas não exige reinstalá-las: o próximo ciclo já usa o código novo. Só reinstale
+     (`instalar-tarefas`) se mudar `tarefas.py`.
 4. Marcar a pasta `Meu Drive\SincronizacaoBD` como **"Disponível off-line"**, quando a casa criá-la (Etapa 4).
 
 ---

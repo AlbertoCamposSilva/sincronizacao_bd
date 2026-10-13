@@ -114,15 +114,30 @@ def test_script_das_tarefas_e_invisivel():
     assert "-m sincronizador ciclo" in s and "RepetitionInterval (New-TimeSpan -Minutes 10)" in s
 
 
-def test_segredo_define_projeto_google_para_nao_chamar_gcloud(monkeypatch):
-    """Sem GOOGLE_CLOUD_PROJECT o google.auth roda 'gcloud.cmd config get project' e pisca uma janela do CMD sob pythonw."""
+def test_nenhum_subprocesso_abre_janela(monkeypatch):
+    """Sob pythonw, subprocesso sem CREATE_NO_WINDOW (ex.: gcloud.cmd via google.auth/acs_toolbox, shell=True) pisca um CMD."""
+    import subprocess
     import sys
-    import types
-    from sincronizador import config
-    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
-    monkeypatch.delenv("X_SEGREDO_TESTE", raising=False)
-    monkeypatch.setenv("ACS_TOOLBOX_GCP_PROJECT", "projeto-teste")
-    falso = types.ModuleType("acs_toolbox.segredos")
-    falso.get_secret = lambda nome, default=None: os.environ.get("GOOGLE_CLOUD_PROJECT")
-    monkeypatch.setitem(sys.modules, "acs_toolbox.segredos", falso)
-    assert config._segredo("X_SEGREDO_TESTE") == "projeto-teste"
+    from sincronizador import invisivel
+    assert os.environ.get("GOOGLE_CLOUD_PROJECT")          # google.auth não precisa perguntar ao gcloud
+    if sys.platform != "win32":
+        return
+    vistos = []
+    cria = subprocess._winapi.CreateProcess
+
+    def espia(*a):
+        vistos.append((a[5], a[8]))                      # (creationflags, startupinfo)
+        return cria(*a)
+    monkeypatch.setattr(subprocess._winapi, "CreateProcess", espia)
+    subprocess.Popen("exit 0", shell=True).wait()
+    subprocess.Popen(["cmd", "/c", "exit 0"], creationflags=0x00000200).wait()   # flags do chamador são somados
+    assert all(fl & invisivel.CREATE_NO_WINDOW for fl, _ in vistos) and vistos[1][0] & 0x200
+    assert all(si.wShowWindow == subprocess.SW_HIDE for _, si in vistos)
+
+
+def test_google_auth_nao_roda_gcloud_para_descobrir_o_projeto():
+    """google.auth._default chamava 'gcloud.cmd config get project' a cada leitura do cofre (cmd + Python do SDK, a cada ciclo)."""
+    import sincronizador  # noqa: F401
+    from google.auth import _cloud_sdk
+    os.environ["GOOGLE_CLOUD_PROJECT"] = os.environ.get("GOOGLE_CLOUD_PROJECT") or "projeto-teste"
+    assert _cloud_sdk.get_project_id() == os.environ["GOOGLE_CLOUD_PROJECT"]

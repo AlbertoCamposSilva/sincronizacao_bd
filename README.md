@@ -77,9 +77,11 @@ A cópia editada dos documentos é a deste repositório; a pasta `Integração B
 a versão anterior.
 
 ## Invisibilidade (nenhuma janela)
-As tarefas rodam com `pythonw.exe`, ocultas. Qualquer subprocesso precisa de `CREATE_NO_WINDOW` e nunca de `shell=True`.
-Caso conhecido (corrigido em 12/10/2026): sem `GOOGLE_CLOUD_PROJECT`, o `google.auth` chamava `gcloud.cmd config get project`
-a cada leitura do cofre e piscava um CMD; `config._segredo` agora define essa variável a partir de `ACS_TOOLBOX_GCP_PROJECT`.
+As tarefas rodam com `pythonw.exe`, ocultas, e o módulo `sincronizador/invisivel.py` (carregado por `sincronizador/__init__.py`) garante duas camadas:
+1. `google.auth._cloud_sdk.get_project_id` é neutralizado: a biblioteca rodava `cmd /c gcloud.cmd config get project` (e um Python do Cloud SDK) a cada
+   leitura do cofre, **mesmo com `GOOGLE_CLOUD_PROJECT` definida** (a correção de 12/10 só com a variável não bastava; corrigido em 13/10/2026).
+2. `subprocess.Popen` passa a usar `CREATE_NO_WINDOW` + `SW_HIDE` por padrão, inclusive em bibliotecas de terceiros (o fallback do acs-toolbox usa `shell=True`).
+Código novo que chame programa externo continua devendo passar `creationflags=CREATE_NO_WINDOW` e evitar `shell=True`.
 Para conferir: iniciar `SincBD_Ciclo` e verificar que o `pythonw` não gera processos filhos (ver `IMPLANTACAO_PC_CNPQ.md`, Etapa 6).
 Para atualizar o CNPq depois: `git pull` + `uv sync` em `C:\Projetos\CNPq\importantes\sincronizacao_bd`; o próximo ciclo já usa o código novo.
 

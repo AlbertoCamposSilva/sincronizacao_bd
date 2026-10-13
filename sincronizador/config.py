@@ -96,9 +96,6 @@ def _segredo(nome: str, padrao=None):
     if nome in os.environ:
         return os.environ[nome]
     from acs_toolbox.segredos import get_secret
-    # Sem o projeto no ambiente, o google.auth chama "gcloud.cmd config get project" e, sob pythonw, isso pisca uma janela do CMD.
-    if os.environ.get("ACS_TOOLBOX_GCP_PROJECT"):
-        os.environ.setdefault("GOOGLE_CLOUD_PROJECT", os.environ["ACS_TOOLBOX_GCP_PROJECT"])
     return get_secret(nome, default=padrao)
 
 
