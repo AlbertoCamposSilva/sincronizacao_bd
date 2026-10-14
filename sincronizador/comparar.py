@@ -37,7 +37,7 @@ def impressao(cfg) -> dict:
         else:
             if pk:
                 col = quote_ident(pk[0], cur)
-                cur.execute(f"select count(*), max({col})::text from {q}")
+                cur.execute(f"select count(*), (select {col}::text from {q} order by {col} desc limit 1) from {q}")
                 n, mx = cur.fetchone()
                 out[nome] = {"n": n, "max": mx}
             else:
